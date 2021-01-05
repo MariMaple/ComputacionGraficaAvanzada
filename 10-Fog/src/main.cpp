@@ -1017,7 +1017,13 @@ void applicationLoop() {
 		* Propiedades de la neblina
 		********************************************/
 		shaderMulLighting.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderMulLighting.setFloat("density", 0.008);
+		shaderMulLighting.setFloat("gradient", 0.5);
+
 		shaderTerrain.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(1.0, 0.0, 0.0)));
+		shaderTerrain.setFloat("density", 0.008);
+		shaderTerrain.setFloat("gradient", 0.5);
+
 		shaderSkybox.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(1.0, 1.0, 1.0)));
 
 		/*******************************************
