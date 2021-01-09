@@ -92,8 +92,15 @@ Model modelLamp2;
 Model modelLampPost2;
 // modelo de hierba transparente
 Model modeloHierba;
+<<<<<<< HEAD
 // modelo de globo
 Model modelGlobo;
+=======
+
+// modelo de Globo transparente
+Model modelGlobo;
+
+>>>>>>> 18417a488e4a4ae75f0b6872828000c83dc01ddb
 // Model animate instance
 // Mayow
 Model mayowModelAnimate;
@@ -176,7 +183,8 @@ std::vector<float> lamp2Orientation = {21.37 + 90, -65.0 + 90};
 std::map<std::string, glm::vec3> blendingSinOrden = {
 	{"aircraft",glm::vec3(0,0,0)},
 	{"heli",glm::vec3(0,0,0)},
-	{"lambo",glm::vec3(0,0,0)}
+	{"lambo",glm::vec3(0,0,0)},
+	{"globo",glm::vec3(0,0,0)}
 };
 
 double deltaTime;
@@ -940,6 +948,8 @@ void applicationLoop() {
 
 	modelMatrixAircraft = glm::translate(modelMatrixAircraft, glm::vec3(10.0, 2.0, -17.5));
 
+	modelMatrixGlobo = glm::translate(modelMatrixGlobo, glm::vec3(21.0, 0.0, 0.0));
+
 	modelMatrixLambo = glm::translate(modelMatrixLambo, glm::vec3(23.0, 0.0, 0.0));
 
 	modelMatrixGlobo = glm::translate(modelMatrixGlobo, glm::vec3(23.0, 1.0, 0.0));
@@ -1277,7 +1287,10 @@ void applicationLoop() {
 		blendingSinOrden.find("heli")->second = glm::vec3(modelMatrixHeli[3]);
 		blendingSinOrden.find("lambo")->second = glm::vec3(modelMatrixLambo[3]);
 		blendingSinOrden.find("globo")->second = glm::vec3(modelMatrixGlobo[3]);
+<<<<<<< HEAD
 
+=======
+>>>>>>> 18417a488e4a4ae75f0b6872828000c83dc01ddb
 		/**************
 		*Se ordena los objetos con el canal alfa
 		*/
@@ -1330,9 +1343,14 @@ void applicationLoop() {
 				modelHeliHeli.render(modelMatrixHeliHeli);
 			}
 			else if (it->second.first.compare("globo") == 0) {
+<<<<<<< HEAD
 				// Globo
 				modelMatrixGlobo[3][1] = terrain.getHeightTerrain(modelMatrixGlobo[3][0], modelMatrixGlobo[3][2]) + 2.0;
 				modelAircraft.render(modelMatrixAircraft);
+=======
+				modelMatrixGlobo[3][1] = terrain.getHeightTerrain(modelMatrixGlobo[3][0], modelMatrixGlobo[3][2]) + 2.0;
+				modelGlobo.render(modelMatrixGlobo);
+>>>>>>> 18417a488e4a4ae75f0b6872828000c83dc01ddb
 			}
 		}
 		glEnable(GL_CULL_FACE);
