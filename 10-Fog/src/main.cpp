@@ -250,9 +250,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Inicialización de los shaders
 	shader.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
-	shaderSkybox.initialize("../Shaders/skyBox_fog.vs", "../Shaders/skyBox_fog.fs");
+	shaderSkybox.initialize("../Shaders/skyBox.vs", "../Shaders/skyBox_fog.fs");
 	shaderMulLighting.initialize("../Shaders/iluminacion_textura_animation_fog.vs", "../Shaders/multipleLights_fog.fs");
-	shaderTerrain.initialize("../Shaders/terrain.vs", "../Shaders/terrain.fs");
+	shaderTerrain.initialize("../Shaders/terrain_fog.vs", "../Shaders/terrain_fog.fs");
 
 	// Inicializacion de los objetos.
 	skyboxSphere.init();
@@ -924,6 +924,12 @@ bool processInput(bool continueApplication) {
 void applicationLoop() {
 	bool psi = true;
 
+	float gradiente = 2.0;
+	float densidad = 0.008;
+	float contador_30 = 0;
+	bool aumento = true;
+
+
 	glm::mat4 view;
 	glm::vec3 axis;
 	glm::vec3 target;
@@ -951,7 +957,7 @@ void applicationLoop() {
 
 	while (psi) {
 		currTime = TimeManager::Instance().GetTime();
-		if(currTime - lastTime < 0.016666667){
+		if (currTime - lastTime < 0.016666667) {
 			glfwPollEvents();
 			continue;
 		}
@@ -969,24 +975,24 @@ void applicationLoop() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
-				(float) screenWidth / (float) screenHeight, 0.01f, 100.0f);
+			(float)screenWidth / (float)screenHeight, 0.01f, 100.0f);
 
-		if(modelSelected == 1){
+		if (modelSelected == 1) {
 			axis = glm::axis(glm::quat_cast(modelMatrixDart));
 			angleTarget = glm::angle(glm::quat_cast(modelMatrixDart));
 			target = modelMatrixDart[3];
 		}
-		else{
+		else {
 			axis = glm::axis(glm::quat_cast(modelMatrixMayow));
 			angleTarget = glm::angle(glm::quat_cast(modelMatrixMayow));
 			target = modelMatrixMayow[3];
 		}
 
-		if(std::isnan(angleTarget))
+		if (std::isnan(angleTarget))
 			angleTarget = 0.0;
-		if(axis.y < 0)
+		if (axis.y < 0)
 			angleTarget = -angleTarget;
-		if(modelSelected == 1)
+		if (modelSelected == 1)
 			angleTarget -= glm::radians(90.0f);
 		camera->setCameraTarget(target);
 		camera->setAngleTarget(angleTarget);
@@ -999,34 +1005,55 @@ void applicationLoop() {
 
 		// Settea la matriz de vista y projection al shader con skybox
 		shaderSkybox.setMatrix4("projection", 1, false,
-				glm::value_ptr(projection));
+			glm::value_ptr(projection));
 		shaderSkybox.setMatrix4("view", 1, false,
-				glm::value_ptr(glm::mat4(glm::mat3(view))));
+			glm::value_ptr(glm::mat4(glm::mat3(view))));
 		// Settea la matriz de vista y projection al shader con multiples luces
 		shaderMulLighting.setMatrix4("projection", 1, false,
-					glm::value_ptr(projection));
+			glm::value_ptr(projection));
 		shaderMulLighting.setMatrix4("view", 1, false,
-				glm::value_ptr(view));
+			glm::value_ptr(view));
 		// Settea la matriz de vista y projection al shader con multiples luces
 		shaderTerrain.setMatrix4("projection", 1, false,
-					glm::value_ptr(projection));
+			glm::value_ptr(projection));
 		shaderTerrain.setMatrix4("view", 1, false,
-				glm::value_ptr(view));
+			glm::value_ptr(view));
+
+
 
 		/*******************************************
-		* Propiedades de la neblina
-		********************************************/
-		shaderMulLighting.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
-		shaderMulLighting.setFloat("density", 0.008);
-		shaderMulLighting.setFloat("gradient", 0.5);
+		 * Propiedades de neblina
+		 *******************************************/
+		shaderMulLighting.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.52, 0.45, 0.63)));
+		shaderTerrain.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.52, 0.45, 0.63)));
+		shaderSkybox.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(0.52, 0.45, 0.63)));
+		shaderMulLighting.setFloat("gradient", gradiente);
+		shaderMulLighting.setFloat("density", densidad);
+		shaderTerrain.setFloat("gradient", gradiente);
+		shaderTerrain.setFloat("density", densidad);
 
-		shaderTerrain.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(1.0, 0.0, 0.0)));
-		shaderTerrain.setFloat("density", 0.008);
-		shaderTerrain.setFloat("gradient", 0.5);
-
-		shaderSkybox.setVectorFloat3("fogColor", glm::value_ptr(glm::vec3(1.0, 1.0, 1.0)));
-
-		/*******************************************
+		if (contador_30 <= 1500) {
+			contador_30++;
+		}
+		else {
+			if (aumento==true) {
+				gradiente += 0.25;
+				densidad += 0.005;
+				if (gradiente == 3.0) {
+					aumento = false;
+				}
+			contador_30 = 0;
+			}
+			if (aumento==false) {
+				gradiente -= 0.25;
+				densidad -= 0.005;
+				if (gradiente == 2.0){
+					aumento = true;
+				}
+			contador_30 = 0;
+			}
+		} 
+		/****************************as***************
 		 * Propiedades Luz direccional
 		 *******************************************/
 		shaderMulLighting.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
