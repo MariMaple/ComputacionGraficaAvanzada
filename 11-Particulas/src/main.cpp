@@ -208,7 +208,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
 
-void initParticlesBuffer() {
+void initParticleBuffers() {
 	//Genera los buffers
 	glGenBuffers(1, &initVel); // Se generan para la velocidad inicial
 	glGenBuffers(1, &startTime);
@@ -247,7 +247,7 @@ void initParticlesBuffer() {
 	delete[] data;
 	data = new GLfloat[nParticles];
 	float time = 0.0f;
-	float rate = 0.00061;
+	float rate = 0.00061f;
 	for (unsigned int i = 0; i < nParticles; i++) {
 		data[i] = time;
 		time += rate;
@@ -771,30 +771,17 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	// Definiendo la textura a utilizar
 	Texture textureParticlesFountain("../Textures/bluewater.png");
-	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = textureParticlesFountain.loadImage(true);
-	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
-	data = textureParticlesFountain.convertToData(bitmap, imageWidth,
-		imageHeight);
-	// Creando la textura con id 1
+	data = textureParticlesFountain.convertToData(bitmap, imageWidth,imageHeight);
 	glGenTextures(1, &textureParticleFountainID);
-	// Enlazar esa textura a una tipo de textura de 2D.
 	glBindTexture(GL_TEXTURE_2D, textureParticleFountainID);
-	// set the texture wrapping parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // set texture wrapping to GL_REPEAT (default wrapping method)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// Verifica si se pudo abrir la textura
 	if (data) {
-		// Transferis los datos de la imagen a memoria
-		// Tipo de textura, Mipmaps, Formato interno de openGL, ancho, alto, Mipmaps,
-		// Formato interno de la libreria de la imagen, el tipo de dato y al apuntador
-		// a los datos
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0,
 			GL_BGRA, GL_UNSIGNED_BYTE, data);
-		// Generan los niveles del mipmap (OpenGL es el ecargado de realizarlos)
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
@@ -804,8 +791,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	/*************************
 	*Llamada a la función de inicializacion de las particulas
-	*/
-	initParticlesBuffer();
+	************************************************/
+	initParticleBuffers();
 }
 
 void destroy() {
@@ -1082,6 +1069,10 @@ void applicationLoop() {
 	keyFramesDart = getKeyFrames("../animaciones/animation_dart.txt");
 
 	lastTime = TimeManager::Instance().GetTime();
+
+	// Time for the particles animation
+	currTimeParticulesAnimation = lastTime;
+	LastTimeParticlesAnimation = lastTime;
 
 	while (psi) {
 		currTime = TimeManager::Instance().GetTime();
@@ -1478,11 +1469,11 @@ void applicationLoop() {
 				*************************/
 				glm::mat4 modelMatrixParticlesFountine = glm::mat4(1.0);
 				modelMatrixParticlesFountine = glm::translate(modelMatrixParticlesFountine, it->second.second);
-				modelMatrixParticlesFountine[3][1] = terrain.getHeightTerrain(modelMatrixParticlesFountine[3][0], modelMatrixParticlesFountine[3][2])+3.6;
-				modelMatrixParticlesFountine = glm::scale(modelMatrixParticlesFountine, glm::vec3(3.0, 3.0, 3.0));
+				modelMatrixParticlesFountine[3][1] = terrain.getHeightTerrain(modelMatrixParticlesFountine[3][0], modelMatrixParticlesFountine[3][2])+4.0;
+				modelMatrixParticlesFountine = glm::scale(modelMatrixParticlesFountine, glm::vec3(2.5, 3.0, 2.5));
 				currTimeParticulesAnimation = TimeManager::Instance().GetTime();
 				if(currTimeParticulesAnimation-LastTimeParticlesAnimation>10.0)
-				currTimeParticulesAnimation = LastTimeParticlesAnimation;
+					LastTimeParticlesAnimation= currTimeParticulesAnimation;
 				glDepthMask(GL_FALSE);
 				glPointSize(10.0f);
 				glActiveTexture(GL_TEXTURE0);
@@ -1495,7 +1486,8 @@ void applicationLoop() {
 				shaderParticlesFountain.setMatrix4("model",1,GL_FALSE,glm::value_ptr(modelMatrixParticlesFountine));
 				glBindVertexArray(VAOParticles);
 				glDrawArrays(GL_POINTS, 0, nParticles);
-				glDepthMask(true);
+				glDepthMask(GL_TRUE);
+				shaderParticlesFountain.turnOff();
 			}
 		}
 		glEnable(GL_CULL_FACE);
