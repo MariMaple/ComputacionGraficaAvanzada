@@ -51,7 +51,7 @@
 int screenWidth;
 int screenHeight;
 
-const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 
 GLFWwindow *window;
 
@@ -68,7 +68,7 @@ Shader shaderParticlesFountain;
 Shader shaderParticlesFire;
 //Shader para visualizar el buffer de profundidad
 Shader shaderViewDepth;
-// Shader de profundidad
+//Shader para dibujar el buffer de profunidad
 Shader shaderDepth;
 
 std::shared_ptr<Camera> camera(new ThirdPersonCamera());
@@ -452,9 +452,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	shaderTerrain.initialize("../Shaders/terrain_shadow.vs", "../Shaders/terrain_shadow.fs");
 	shaderParticlesFountain.initialize("../Shaders/particlesFountain.vs", "../Shaders/particlesFountain.fs");
 	shaderParticlesFire.initialize("../Shaders/particlesFire.vs", "../Shaders/particlesFire.fs", { "Position", "Velocity", "Age" });
-	shaderViewDepth.initialize(".../Shaders/texturizado.vs", ".../Shaders/texturizado_depth_view.fs");//Agregando Shader shadow
-	shaderViewDepth.initialize(".../Shaders/shadow_mapping_depth.vs", ".../Shaders/shadow_mapping_depth.fs");//Agregando Shader shadow
-
+	shaderViewDepth.initialize("../Shaders/texturizado.vs", "../Shaders/texturizado_depth_view.fs");
+	shaderDepth.initialize("../Shaders/shadow_mapping_depth.vs", "../Shaders/shadow_mapping_depth.fs");
 
 	// Inicializacion de los objetos.
 	skyboxSphere.init();
@@ -1006,12 +1005,12 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);*/
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);*/
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
 	glDrawBuffer(GL_NONE);
@@ -1037,7 +1036,7 @@ void destroy() {
 	skyboxSphere.destroy();
 	boxCollider.destroy();
 	sphereCollider.destroy();
-	boxViewDepth.destroy();//Agregar destruir caja
+	boxViewDepth.destroy();
 
 	// Terrains objects Delete
 	terrain.destroy();
@@ -1360,7 +1359,7 @@ void applicationLoop() {
 		camera->updateCamera();
 		view = camera->getViewMatrix();
 
-		//Agregar: Matriz de proyección de Shadow mapping
+		// Settea la matriz de proyección de Shadow mapping
 		glm::mat4 lightProjection, lightView;
 		glm::mat4 lightSpaceMatrix;
 		float near_plane = 0.1f, far_plane = 20.0f;
@@ -1505,11 +1504,11 @@ void applicationLoop() {
 		}
 
 		/*******************************************
-		 * Paso1: Se dibuja la escena desde la luz Agregar
+		 * 1.- We render the depth buffer  // se dibuja la escena desde la luz
 		 *******************************************/
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//Render de la escena desde la luz
+		// render scene from light's point of view
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -1520,37 +1519,36 @@ void applicationLoop() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		/*******************************************
-		 * Debug: Visualizar el mapa de sombras Agregar
-		 *******************************************/
-		 /*//reset Viewport
-		 glViewport(0, 0, screenWidth, screenHeight);
-		 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		 //Render el buffer de profundidad densde la luz en una primitiva cuadrada
-		 shaderViewDepth.setMatrix4("projection", 1, false, glm::value_ptr(glm::mat4(1.0)));
-		 shaderViewDepth.setMatrix4("view", 1, false, glm::value_ptr(glm::mat4(1.0)));
-		 shaderViewDepth.setFloat("near_plane", near_plane);
-		 shaderViewDepth.setFloat("far_plane", far_plane);
-		 glActiveTexture(GL_TEXTURE0);
-		 glBindTexture(GL_TEXTURE_2D, depthMap);
-		 boxViewDepth.setScale(glm::vec3(2.0, 2.0, 1.0));
-		 boxViewDepth.render();
-		 */
-		 /*******************************************
-		  * Pas2: Render objeto Agregar
-		  *******************************************/
+		* Debug: Visualiza el mapa de sombras
+		*******************************************/
+		/*glViewport(0, 0, screenWidth, screenHeight);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		shaderViewDepth.setMatrix4("projection", 1, false, glm::value_ptr(glm::mat4(1.0)));
+		shaderViewDepth.setMatrix4("view", 1, false, glm::value_ptr(glm::mat4(1.0)));
+		shaderViewDepth.setFloat("near_plane", near_plane);
+		shaderViewDepth.setFloat("far_plane", far_plane);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		boxViewDepth.setScale(glm::vec3(2.0, 2.0, 1.0));
+		boxViewDepth.render();
+		*/
+
+		/*******************************************
+		* 2.- We render the normal objects // Render objetos
+		*******************************************/
 		glViewport(0, 0, screenWidth, screenHeight);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		prepareScene();
 		glActiveTexture(GL_TEXTURE10);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		shaderMulLighting.setInt("shadowMap", 10);
-		shaderTerrain.setInt("shapowMap", 10);
+		shaderTerrain.setInt("shadowMap", 10); 
 		renderScene();
 
 		/*******************************************
 		 * Skybox
 		 *******************************************/
-		GLint oldCullFaceMode;
+		/*GLint oldCullFaceMode;
 		GLint oldDepthFuncMode;
 		// deshabilita el modo del recorte de caras ocultas para ver las esfera desde adentro
 		glGetIntegerv(GL_CULL_FACE_MODE, &oldCullFaceMode);
@@ -1562,13 +1560,30 @@ void applicationLoop() {
 		skyboxSphere.render();
 		glCullFace(oldCullFaceMode);
 		glDepthFunc(oldDepthFuncMode);
-		renderScene();
+		renderScene();*/
 
 		/*******************************************
-		 * Creacion de colliders
-		 * IMPORTANT do this before interpolations
+		 * Debug to box light box 
 		 *******************************************/
-		 // Collider del dart vader lego
+		 /*glm::vec3 front = glm::normalize(-lightPos);
+		 glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0, 1, 0), front));
+		 glm::vec3 up = glm::normalize(glm::cross(front, right));
+		 glDisable(GL_CULL_FACE);
+		 glm::mat4 boxViewTransform = glm::mat4(1.0f);
+		 boxViewTransform = glm::translate(boxViewTransform, centerBox);
+		 boxViewTransform[0] = glm::vec4(right, 0.0);
+		 boxViewTransform[1] = glm::vec4(up, 0.0);
+		 boxViewTransform[2] = glm::vec4(front, 0.0);
+		 boxViewTransform = glm::scale(boxViewTransform, glm::vec3(shadowBox->getWidth(), shadowBox->getHeight(), shadowBox->getLength()));
+		 boxLightViewBox.enableWireMode();
+		 boxLightViewBox.render(boxViewTransform);
+		 glEnable(GL_CULL_FACE);*/
+
+		 /*******************************************
+		  * Creacion de colliders
+		  * IMPORTANT do this before interpolations
+		  *******************************************/
+		  // Collider del dart vader lego
 		glm::mat4 modelmatrixColliderDart = glm::mat4(modelMatrixDart);
 		AbstractModel::OBB dartLegoBodyCollider;
 		// Set the orientation of collider before doing the scale
@@ -1865,11 +1880,10 @@ void applicationLoop() {
 		}
 
 		glfwSwapBuffers(window);
-
 	}
 }
 
-void prepareScene() { //Agrgar IMPORTANTE, se debe colocar sus objetos nuevos
+void prepareScene() {
 
 	skyboxSphere.setShader(&shaderSkybox);
 
@@ -1914,8 +1928,7 @@ void prepareScene() { //Agrgar IMPORTANTE, se debe colocar sus objetos nuevos
 	mayowModelAnimate.setShader(&shaderMulLighting);
 }
 
-
-void prepareDepthScene() {//Agrgar IMPORTANTE, se debe colocar sus objetos nuevos
+void prepareDepthScene() {
 
 	skyboxSphere.setShader(&shaderDepth);
 
@@ -1960,10 +1973,10 @@ void prepareDepthScene() {//Agrgar IMPORTANTE, se debe colocar sus objetos nuevo
 	mayowModelAnimate.setShader(&shaderDepth);
 }
 
-void renderScene(bool renderParticles) {//Agregar: Para el renderizado la escena
+void renderScene(bool renderParticles) {
 	/*******************************************
-	* Terrain Cesped
-	*******************************************/
+	 * Terrain Cesped
+	 *******************************************/
 	glm::mat4 modelCesped = glm::mat4(1.0);
 	modelCesped = glm::translate(modelCesped, glm::vec3(0.0, 0.0, 0.0));
 	modelCesped = glm::scale(modelCesped, glm::vec3(200.0, 0.001, 200.0));
@@ -2122,7 +2135,6 @@ void renderScene(bool renderParticles) {//Agregar: Para el renderizado la escena
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
-
 	for (std::map<float, std::pair<std::string, glm::vec3> >::reverse_iterator it = blendingSorted.rbegin(); it != blendingSorted.rend(); it++) {
 		if (it->second.first.compare("aircraft") == 0) {
 			// Render for the aircraft model
@@ -2235,10 +2247,6 @@ void renderScene(bool renderParticles) {//Agregar: Para el renderizado la escena
 			glDepthMask(GL_TRUE);
 			drawBuf = 1 - drawBuf;
 			shaderParticlesFire.turnOff();
-
-			/**********
-			 * End Render particles systems
-			 */
 		}
 
 	}
